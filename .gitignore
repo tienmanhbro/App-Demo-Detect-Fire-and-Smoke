@@ -1,0 +1,11 @@
+.vs/
+*/.vs/
+**/.vs/
+
+obj/
+*/.obj/
+**/.obj/
+
+bin/
+*/bin/
+**/bin/
