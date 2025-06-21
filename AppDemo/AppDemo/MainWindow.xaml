@@ -13,8 +13,24 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid>
-        
-        
+    <Grid Padding="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" BorderBrush="Gray" BorderThickness="2" CornerRadius="5" Background="#F0F0F0">
+            <!-- SỬA LỖI: Dùng x:Bind để liên kết trực tiếp và an toàn với thuộc tính ViewModel -->
+            <Image Source="{x:Bind ViewModel.ImageSource, Mode=OneWay}" Stretch="Uniform"/>
+        </Border>
+
+        <TextBlock Grid.Row="1" Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" Margin="0,15,0,10" FontSize="14" HorizontalAlignment="Center"/>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+            <!-- SỬA LỖI: Dùng x:Bind cho Command để đảm bảo sự kiện được gọi -->
+            <Button Content="Tải Ảnh" Command="{x:Bind ViewModel.LoadImageCommand}" Width="150" Height="40" Style="{StaticResource AccentButtonStyle}"/>
+            <Button Content="Tải Video" Command="{x:Bind ViewModel.LoadVideoCommand}" Width="150" Height="40"/>
+        </StackPanel>
     </Grid>
 </Window>
