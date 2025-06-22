@@ -13,6 +13,9 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Storage.Pickers;
+using Windows.Storage;
+using WinRT.Interop;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -22,18 +25,31 @@ namespace AppDemo
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainWindow : Window
+    public sealed partial class MainWindow : Microsoft.UI.Xaml.Window
     {
         public MainViewModel ViewModel { get; }
         public MainWindow()
         {
             InitializeComponent();
-            Title = "Ứng Dụng Phát Hiện Cháy (WinUI 3)";
+            ViewModel = new MainViewModel();
+        }
+        public async void SelectFileButton_Click(object sender, RoutedEventArgs e)
+        {
+            var picker = new FileOpenPicker();
+            var hwnd = WindowNative.GetWindowHandle(this);
+            InitializeWithWindow.Initialize(picker, hwnd);
+            picker.FileTypeFilter.Add(".jpg");
+            picker.FileTypeFilter.Add(".png");
+            picker.FileTypeFilter.Add(".mp4");
 
-            ViewModel = new MainViewModel
+            StorageFile file = await picker.PickSingleFileAsync();
+            if (file != null)
             {
-                DispatcherQueue = this.DispatcherQueue
-            };
+                if (ViewModel.ProcessFileCommand.CanExecute(file))
+                {
+                    ViewModel.ProcessFileCommand.Execute(file);
+                }
+            }
         }
     }
 }
