@@ -1,10 +1,14 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using AppDemo.Models;
+using AppDemo.Services;
+using ClassLibrary1;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -22,6 +26,18 @@ namespace AppDemo.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
+        public static MainViewModel instance;
+        public static MainViewModel GetInstance()
+        {
+            if (instance == null)
+            {
+                instance = new MainViewModel();
+            }
+            return instance;
+        }
+
+        HistoryService historyService = HistoryService.GetInstance();
+
         [ObservableProperty] private BitmapImage? _inputImageSource;
         [ObservableProperty] private BitmapImage? _outputImageSource;
         [ObservableProperty] private MediaSource? _outputVideoSource;
@@ -32,7 +48,30 @@ namespace AppDemo.ViewModels
         [ObservableProperty] private bool _isBusy;
         [ObservableProperty] private string _statusMessage = "Sẵn sàng";
 
-        public MainViewModel() { }
+        [ObservableProperty] private ObservableCollection<HistoryItem> _detectionHistory = new();
+
+        public MainViewModel()
+        {
+            InitializeAsync();
+        }
+
+        private async Task InitializeAsync()
+        {
+            StatusMessage = "Đang tải lịch sử...";
+            var historyPaths = await historyService.LoadHistoryAsync();
+            foreach (var path in historyPaths)
+            {
+                if (File.Exists(path))
+                {
+                    DetectionHistory.Add(new HistoryItem
+                    {
+                        FilePath = path,
+                        ImageSource = new BitmapImage(new Uri(path))
+                    });
+                }
+            }
+            StatusMessage = "Sẵn sàng";
+        }
 
         [RelayCommand]
         private async Task ProcessFileAsync(StorageFile inputFile)
@@ -49,9 +88,31 @@ namespace AppDemo.ViewModels
 
             try
             {
-                string? resultPath = await RunPythonScriptAndWaitAsync(inputFile.Path);
+                string? resultPath = await API(inputFile.Path);
                 if (!string.IsNullOrEmpty(resultPath))
                 {
+                    if (Path.GetExtension(resultPath).ToLower() is ".jpg" or ".png")
+                    {
+                        // BƯỚC KIỂM TRA MỚI: Dùng LINQ.Any() để xem có mục nào đã có cùng FilePath chưa
+                        bool daTonTai = DetectionHistory.Any(item => item.FilePath == resultPath);
+
+                        if (!daTonTai) // Nếu CHƯA tồn tại thì mới thêm
+                        {
+                            // Thêm vào danh sách để UI tự cập nhật
+                            DetectionHistory.Add(new HistoryItem
+                            {
+                                FilePath = resultPath,
+                                ImageSource = new BitmapImage(new Uri(resultPath))
+                            });
+
+                            // Lưu đường dẫn vào file log
+                            await historyService.AddToHistoryAsync(resultPath);
+                        }
+                        else // neu da ton tai
+                        {
+
+                        }
+                    }
                     StatusMessage = "Đã xử lý xong! Đang hiển thị kết quả...";
                     await LoadResultFileAsync(resultPath);
                     StatusMessage = "Hoàn tất!";
@@ -67,13 +128,23 @@ namespace AppDemo.ViewModels
             }
         }
 
-        private async Task<string?> RunPythonScriptAndWaitAsync(string inputPath)
-        {
-                string outputDirectory = "C:\\DO AN TOT NGHIEP\\rs";
-                Directory.CreateDirectory(outputDirectory);
-                string outputFileName = $"result_{Path.GetFileName(inputPath)}";
-                string outputFilePath = Path.Combine(outputDirectory, outputFileName);
 
+        // api
+        private async Task<string?> API(string inputPath)
+        {
+            Class1.Manh();
+            string outputDirectory = "C:\\DO AN TOT NGHIEP\\rs";
+            Directory.CreateDirectory(outputDirectory);
+            string outputFileName = $"result_{Path.GetFileName(inputPath)}";
+            string outputFilePath = Path.Combine(outputDirectory, outputFileName);
+
+            bool tonTai = DetectionHistory.Any(item => item.FilePath == outputFilePath);
+            if (tonTai)
+            {
+                return outputFilePath;
+            }
+            else
+            {
                 var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
@@ -107,12 +178,12 @@ namespace AppDemo.ViewModels
 
                     return null;
                 }
+            }
         }
 
         private async Task LoadResultFileAsync(string filePath)
         {
             var fileInfo = new FileInfo(filePath);
-            await Task.Delay(200); // Chờ một chút để file được giải phóng hoàn toàn
 
             if (fileInfo.Extension.ToLower() is ".jpg" or ".png")
             {
@@ -139,14 +210,13 @@ namespace AppDemo.ViewModels
             }
             else
             {
-                if(file.ContentType.StartsWith("video/"))
+                if (file.ContentType.StartsWith("video/"))
                 {
                     InputVideoSource = MediaSource.CreateFromStorageFile(file);
                     IsVideoInputVisible = true;
                 }
             }
         }
-  
     }
 }
 

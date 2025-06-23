@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Refer (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Refer (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

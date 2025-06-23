@@ -1,4 +1,5 @@
-﻿using AppDemo.ViewModels;
+﻿using AppDemo.Models;
+using AppDemo.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -13,8 +14,8 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
-using Windows.Storage.Pickers;
 using Windows.Storage;
+using Windows.Storage.Pickers;
 using WinRT.Interop;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -27,11 +28,10 @@ namespace AppDemo
     /// </summary>
     public sealed partial class MainWindow : Microsoft.UI.Xaml.Window
     {
-        public MainViewModel ViewModel { get; }
+        MainViewModel ViewModel = MainViewModel.GetInstance();
         public MainWindow()
         {
             InitializeComponent();
-            ViewModel = new MainViewModel();
         }
         public async void SelectFileButton_Click(object sender, RoutedEventArgs e)
         {
@@ -49,6 +49,16 @@ namespace AppDemo
                 {
                     ViewModel.ProcessFileCommand.Execute(file);
                 }
+            }
+        }
+
+        private void ListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is HistoryItem clickedItem)
+            {
+                this.ViewModel.OutputImageSource = clickedItem.ImageSource;
+                this.ViewModel.IsImageOutputVisible = true;
+                this.ViewModel.IsVideoOutputVisible = false;
             }
         }
     }
