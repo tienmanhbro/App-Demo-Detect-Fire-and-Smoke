@@ -25,8 +25,10 @@ namespace AppDemo.ViewModels
         [ObservableProperty] private BitmapImage? _inputImageSource;
         [ObservableProperty] private BitmapImage? _outputImageSource;
         [ObservableProperty] private MediaSource? _outputVideoSource;
+        [ObservableProperty] private MediaSource? _inputVideoSource;
         [ObservableProperty] private bool _isImageOutputVisible;
         [ObservableProperty] private bool _isVideoOutputVisible;
+        [ObservableProperty] private bool _isVideoInputVisible;
         [ObservableProperty] private bool _isBusy;
         [ObservableProperty] private string _statusMessage = "Sẵn sàng";
 
@@ -67,7 +69,7 @@ namespace AppDemo.ViewModels
 
         private async Task<string?> RunPythonScriptAndWaitAsync(string inputPath)
         {
-                string outputDirectory = "D:\\DO AN TOT NGHIEP\\rs";
+                string outputDirectory = "C:\\DO AN TOT NGHIEP\\rs";
                 Directory.CreateDirectory(outputDirectory);
                 string outputFileName = $"result_{Path.GetFileName(inputPath)}";
                 string outputFilePath = Path.Combine(outputDirectory, outputFileName);
@@ -77,8 +79,8 @@ namespace AppDemo.ViewModels
                     StartInfo = new ProcessStartInfo
                     {
                         // !!! THAY ĐỔI 2 ĐƯỜNG DẪN NÀY CHO ĐÚNG VỚI MÁY CỦA BẠN !!!
-                        FileName = @"D:\python\python.exe",
-                        Arguments = $"\"D:\\myapps\\App-Demo-Detect-Fire-and-Smoke\api\\api.py\" --input \"{inputPath}\" --output \"{outputFilePath}\"",
+                        FileName = @"C:\Users\ameri\AppData\Local\Programs\Python\Python313\python.exe",
+                        Arguments = $"\"C:\\Users\\ameri\\source\\repos\\api\\api.py\" --input \"{inputPath}\" --output \"{outputFilePath}\"",
                         UseShellExecute = false,
                         CreateNoWindow = true,
                         RedirectStandardOutput = true,
@@ -87,6 +89,7 @@ namespace AppDemo.ViewModels
                 };
 
                 process.Start();
+                string output = process.StandardOutput.ReadToEnd();
                 string errors = process.StandardError.ReadToEnd();
                 process.WaitForExit();
 
@@ -96,7 +99,12 @@ namespace AppDemo.ViewModels
                 }
                 else
                 {
-                    App.MainWindow.DispatcherQueue.TryEnqueue(() => StatusMessage = $"Lỗi từ script Python: {errors}");
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        StatusMessage = $"Lỗi từ script Python: {errors}";
+                        Debug.WriteLine("Lỗi Python: " + errors);
+                    });
+
                     return null;
                 }
         }
@@ -125,8 +133,17 @@ namespace AppDemo.ViewModels
             {
                 using var stream = await file.OpenAsync(FileAccessMode.Read);
                 var bmp = new BitmapImage();
+                IsVideoInputVisible = false;
                 await bmp.SetSourceAsync(stream);
                 InputImageSource = bmp;
+            }
+            else
+            {
+                if(file.ContentType.StartsWith("video/"))
+                {
+                    InputVideoSource = MediaSource.CreateFromStorageFile(file);
+                    IsVideoInputVisible = true;
+                }
             }
         }
   
